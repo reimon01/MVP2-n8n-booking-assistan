@@ -24,6 +24,11 @@ export async function getTenant(db, tenantId) {
   return r.rows[0] ?? null;
 }
 
+export async function getTenantByPhone(db, whatsappPhone) {
+  const r = await db.query("SELECT * FROM tenants WHERE whatsapp_phone = $1", [whatsappPhone]);
+  return r.rows[0] ?? null;
+}
+
 export async function getActiveServices(db, tenantId) {
   const r = await db.query(
     "SELECT * FROM services WHERE tenant_id = $1 AND active = true ORDER BY name",

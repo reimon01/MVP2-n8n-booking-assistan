@@ -4,6 +4,7 @@
   "description": "Asistente de reservas por WhatsApp — v2.0 simplificada para n8n (5-15 clientes)",
   "type": "module",
   "scripts": {
+    "start": "node src/server.js",
     "db:setup": "node scripts/db-setup.js",
     "test": "vitest run",
     "test:watch": "vitest"
