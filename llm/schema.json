@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "entities"],
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "BOOK_APPOINTMENT",
+        "CANCEL_APPOINTMENT",
+        "RESCHEDULE_APPOINTMENT",
+        "ASK_SERVICES",
+        "ASK_PRICES",
+        "ASK_BUSINESS_HOURS",
+        "ASK_LOCATION",
+        "CONFIRM",
+        "REJECT",
+        "UNKNOWN"
+      ]
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "serviceId",
+        "serviceName",
+        "requestedDate",
+        "requestedTime",
+        "customerName",
+        "confirmation"
+      ],
+      "properties": {
+        "serviceId": { "type": ["string", "null"] },
+        "serviceName": { "type": ["string", "null"] },
+        "requestedDate": { "type": ["string", "null"], "description": "YYYY-MM-DD" },
+        "requestedTime": { "type": ["string", "null"], "description": "HH:mm" },
+        "customerName": { "type": ["string", "null"] },
+        "confirmation": { "type": ["string", "null"], "enum": ["YES", "NO", null] }
+      }
+    }
+  }
+}

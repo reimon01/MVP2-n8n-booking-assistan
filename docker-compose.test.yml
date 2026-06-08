@@ -1,0 +1,19 @@
+# PostgreSQL dedicado para los tests de la v2.0.
+#   docker compose -f docker-compose.test.yml up -d
+#   npm test
+#   docker compose -f docker-compose.test.yml down
+services:
+  vida-v2-test-db:
+    image: postgres:17-alpine
+    container_name: vida-v2-test-db
+    environment:
+      POSTGRES_USER: vida
+      POSTGRES_PASSWORD: vida
+      POSTGRES_DB: vida_v2_test
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vida -d vida_v2_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15

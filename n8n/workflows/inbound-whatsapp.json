@@ -1,0 +1,74 @@
+{
+  "name": "VIDA v2 — Inbound WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-in",
+      "name": "Webhook WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "vida-v2-whatsapp"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza el payload entrante a la forma {tenantId, phone, messageText, messageId, receivedAt}.\n// Ajusta el mapeo segun el formato real del webhook de WhatsApp Cloud API.\nconst body = $json.body ?? $json;\nconst entry = body.entry?.[0]?.changes?.[0]?.value ?? {};\nconst m = entry.messages?.[0];\nif (!m || m.type !== 'text') { return []; }\nreturn [{ json: {\n  tenantId: $env.TENANT_ID || body.tenantId,\n  phone: m.from,\n  messageText: m.text.body,\n  messageId: m.id,\n  receivedAt: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : new Date().toISOString(),\n} }];"
+      },
+      "id": "normalize",
+      "name": "Normalizar mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM tenants WHERE id = $1",
+        "additionalFields": {}
+      },
+      "id": "load-tenant",
+      "name": "Cargar tenant",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [680, 300],
+      "credentials": { "postgres": { "id": "PG_CRED", "name": "VIDA Postgres" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Pega aqui el contenido de src/lib (bundle) ===\n// Este Code node debe ejecutar processInbound() usando una conexion Postgres.\n// En n8n se recomienda dividir la logica en nodos (ver README), o usar la\n// imagen de n8n con NODE_FUNCTION_ALLOW_EXTERNAL=pg y requerir 'pg'.\n//\n// Pseudocodigo del orquestador (ver src/lib/orchestrator.js como fuente):\n//   1. idempotencia (sessions.context.processedMessageIds)\n//   2. find/create customer\n//   3. load session\n//   4. LLM extract (nodo aparte)\n//   5. ramas A-D + getAvailability/createAppointment/cancel/reschedule\n//   6. responder y guardar sesion\nreturn $input.all();"
+      },
+      "id": "orchestrate",
+      "name": "Orquestador (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"reply\": $json.reply } }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp": { "main": [[{ "node": "Normalizar mensaje", "type": "main", "index": 0 }]] },
+    "Normalizar mensaje": { "main": [[{ "node": "Cargar tenant", "type": "main", "index": 0 }]] },
+    "Cargar tenant": { "main": [[{ "node": "Orquestador (Code)", "type": "main", "index": 0 }]] },
+    "Orquestador (Code)": { "main": [[{ "node": "Responder", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "pinData": {},
+  "meta": { "templatecredsSetupCompleted": false }
+}
